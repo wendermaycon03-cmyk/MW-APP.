@@ -1,0 +1,265 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MW BLACKJACK ANALYZER</title>
+<style>
+:root {
+  --bg:#080c0b;--panel:#101815;--green:#00f59b;
+  --muted:#8b9c94;--border:#20332b;--red:#ff5268;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#f2fff8;
+font-family:Arial,Helvetica,sans-serif}
+header{padding:20px 5%;border-bottom:1px solid var(--border);
+display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:21px;font-weight:900;letter-spacing:1px}
+.logo span{color:var(--green)}
+.status{font-size:12px;color:var(--green)}
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:90vh}
+aside{padding:25px 15px;border-right:1px solid var(--border)}
+.menu{padding:13px;color:var(--muted);border-radius:8px;margin-bottom:7px}
+.menu.active{background:#123126;color:var(--green)}
+main{padding:25px;max-width:1200px;width:100%;margin:auto}
+h1{font-size:25px;margin:0 0 8px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:25px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.card,.panel{background:var(--panel);border:1px solid var(--border);
+border-radius:13px;padding:18px}
+.stat-label{font-size:12px;color:var(--muted)}
+.stat-value{font-size:25px;font-weight:bold;margin-top:8px;color:var(--green)}
+.game{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:18px}
+.hand{min-height:150px}
+.hand h3{margin-top:0;font-size:15px}
+.cards{display:flex;gap:7px;flex-wrap:wrap;min-height:65px}
+.playing-card{background:#f7fff9;color:#101815;width:43px;height:59px;
+border-radius:6px;display:flex;align-items:center;justify-content:center;
+font-weight:bold;font-size:17px;box-shadow:0 3px 8px #0008}
+.red{color:#d92d48}
+.total{font-size:22px;font-weight:bold;margin-top:12px}
+.controls{display:flex;flex-wrap:wrap;gap:7px;margin-top:15px}
+button{background:#17241e;color:white;border:1px solid #345044;
+padding:11px 13px;border-radius:7px;cursor:pointer;font-weight:bold}
+button:hover{border-color:var(--green);color:var(--green)}
+button.primary{background:var(--green);color:#06140d;border:0}
+button.danger{color:var(--red)}
+.analysis{margin-top:18px;border:1px solid var(--green);
+background:#0d2119;border-radius:13px;padding:20px}
+.decision{font-size:25px;color:var(--green);font-weight:900;margin:8px 0}
+.explanation{font-size:13px;color:#b4c8bd;line-height:1.6}
+.history{margin-top:18px}
+.history-item{padding:12px 0;border-bottom:1px solid var(--border);
+font-size:13px;color:#c1d1c8}
+input{background:#09110d;color:white;border:1px solid var(--border);
+padding:11px;border-radius:7px;width:100%;margin-top:8px}
+.small{font-size:11px;color:var(--muted);line-height:1.6}
+footer{text-align:center;color:var(--muted);padding:25px;font-size:11px}
+@media(max-width:750px){
+.layout{grid-template-columns:1fr}
+aside{display:flex;gap:7px;overflow:auto;padding:10px;border-right:0}
+.menu{white-space:nowrap;margin:0}
+main{padding:17px}
+.game{grid-template-columns:1fr}
+.stats{gap:7px}
+.card{padding:12px}
+.stat-value{font-size:20px}
+header{padding:16px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">MW <span>BLACKJACK</span> ANALYZER</div>
+  <div class="status">● ANALISADOR MANUAL</div>
+</header>
+
+<div class="layout">
+<aside>
+  <div class="menu active">▣ Painel principal</div>
+  <div class="menu">▤ Estatísticas</div>
+  <div class="menu">◷ Histórico</div>
+  <div class="menu">⚙ Estratégia</div>
+</aside>
+
+<main>
+<h1>Painel de análise</h1>
+<div class="sub">Registre as cartas da mesa e consulte a estratégia básica.</div>
+
+<div class="stats">
+  <div class="card"><div class="stat-label">RODADAS</div>
+  <div class="stat-value" id="rounds">0</div></div>
+  <div class="card"><div class="stat-label">VITÓRIAS REGISTRADAS</div>
+  <div class="stat-value" id="wins">0</div></div>
+  <div class="card"><div class="stat-label">DERROTAS REGISTRADAS</div>
+  <div class="stat-value" id="losses">0</div></div>
+</div>
+
+<div class="game">
+  <section class="panel hand">
+    <h3>SUAS CARTAS</h3>
+    <div class="cards" id="playerCards"></div>
+    <div class="total">Total: <span id="playerTotal">0</span></div>
+    <div class="controls" id="playerButtons"></div>
+  </section>
+  <section class="panel hand">
+    <h3>CARTA VISÍVEL DO DEALER</h3>
+    <div class="cards" id="dealerCards"></div>
+    <div class="total">Total: <span id="dealerTotal">0</span></div>
+    <div class="controls" id="dealerButtons"></div>
+  </section>
+</div>
+
+<div class="analysis">
+  <div class="stat-label">RECOMENDAÇÃO DA ESTRATÉGIA BÁSICA</div>
+  <div class="decision" id="decision">AGUARDANDO CARTAS</div>
+  <div class="explanation" id="explanation">
+    Cadastre suas cartas e a carta visível do dealer para consultar a estratégia.
+  </div>
+</div>
+
+<div class="controls">
+  <button class="primary" onclick="analyze()">ANALISAR JOGADA</button>
+  <button onclick="saveRound()">SALVAR RODADA</button>
+  <button onclick="undo()">DESFAZER</button>
+  <button class="danger" onclick="newRound()">NOVA RODADA</button>
+</div>
+
+<section class="panel history">
+  <h3>HISTÓRICO DA SESSÃO</h3>
+  <div id="history"><div class="small">Nenhuma rodada registrada.</div></div>
+</section>
+
+<section class="panel" style="margin-top:18px">
+  <h3>ACESSO À PLATAFORMA</h3>
+  <div class="small">Insira seu link de indicação. Informe claramente que você pode receber comissão pelas indicações.</div>
+  <input id="affiliate" placeholder="Cole aqui seu link de indicação">
+  <button class="primary" style="margin-top:10px" onclick="openAffiliate()">ACESSAR PLATAFORMA</button>
+</section>
+
+<p class="small" style="margin-top:20px">
+  Estratégia baseada em regras tradicionais de blackjack. Considera dealer parado em soft 17, sem rendição e com possibilidade de dobrar após dividir. As regras da mesa podem alterar as decisões. O painel não prevê cartas futuras nem garante ganhos.
+</p>
+</main>
+</div>
+<footer>MW BLACKJACK ANALYZER • FERRAMENTA DE ESTUDO E ESTRATÉGIA • 18+</footer>
+
+<script>
+const ranks=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+let player=[],dealer=[],history=[],rounds=0,wins=0,losses=0;
+let snapshots=[];
+
+function value(c){return c==="A"?11:["K","Q","J"].includes(c)?10:Number(c)}
+function handInfo(cards){
+ let total=cards.reduce((s,c)=>s+value(c),0);
+ let aces=cards.filter(c=>c==="A").length;
+ while(total>21&&aces>0){total-=10;aces--}
+ return {total,soft:cards.includes("A")&&total<=11+cards.filter(c=>c==="A").length*10};
+}
+function cardHTML(c){
+ let red=["♥","♦"].includes(c.suit);
+ return `<div class="playing-card ${red?"red":""}">${c.rank}<br>${c.suit}</div>`;
+}
+function render(){
+ document.getElementById("playerCards").innerHTML=player.map(cardHTML).join("");
+ document.getElementById("dealerCards").innerHTML=dealer.map(cardHTML).join("");
+ document.getElementById("playerTotal").textContent=handInfo(player.map(c=>c.rank)).total;
+ document.getElementById("dealerTotal").textContent=handInfo(dealer.map(c=>c.rank)).total;
+ document.getElementById("rounds").textContent=rounds;
+ document.getElementById("wins").textContent=wins;
+ document.getElementById("losses").textContent=losses;
+}
+function buttons(){
+ ["playerButtons","dealerButtons"].forEach((id,i)=>{
+  document.getElementById(id).innerHTML=ranks.map(r=>
+   `<button onclick="addCard(${i},'${r}')">${r}</button>`).join("");
+ });
+}
+function snapshot(){snapshots.push({player:[...player],dealer:[...dealer]})}
+function addCard(who,rank){
+ snapshot();
+ const card={rank,suit:["♠","♥","♦","♣"][Math.floor(Math.random()*4)]};
+ (who===0?player:dealer).push(card);
+ render();
+}
+function dealerValue(){
+ return dealer.length?handInfo(dealer.map(c=>c.rank)).total:0;
+}
+function strategy(){
+ if(player.length<2||dealer.length<1)
+  return ["AGUARDANDO CARTAS","Cadastre pelo menos duas cartas suas e uma carta visível do dealer."];
+ const p=player.map(c=>c.rank),d=dealer[0].rank;
+ const total=handInfo(p).total,up=value(d);
+ const soft=p.includes("A")&&total<=21&&p.reduce((s,c)=>s+value(c),0)!==total;
+ const pair=p.length===2&&p[0]===p[1];
+ if(total>21)return ["ESTOUROU","Sua mão passou de 21."];
+ if(pair){
+  const v=p[0];
+  if(v==="A"||v==="8")return ["DIVIDIR","Estratégia básica: dividir este par."];
+  if(v==="10"||v==="J"||v==="Q"||v==="K")return ["PARAR","Não dividir pares de valor 10."];
+  if(v==="9"&&[2,3,4,5,6,8,9].includes(up))return ["DIVIDIR","Dividir par de 9 contra esta carta."];
+  if(v==="7"&&up<=7)return ["DIVIDIR","Dividir par de 7 contra dealer de 2 a 7."];
+  if(v==="6"&&up<=6)return ["DIVIDIR","Dividir par de 6 contra dealer de 2 a 6."];
+  if(["2","3"].includes(v)&&up<=7)return ["DIVIDIR","Dividir par de 2 ou 3 contra dealer de 2 a 7."];
+  if(v==="4"&&(up===5||up===6))return ["DIVIDIR","Dividir par de 4 contra 5 ou 6."];
+ }
+ if(soft){
+  if(total>=19)return ["PARAR","Mão suave de 19 ou mais: parar."];
+  if(total===18){
+   if(up>=3&&up<=6)return ["DOBRAR","Dobrar se permitido; caso contrário, parar."];
+   if(up===2||up===7||up===8)return ["PARAR","Parar com 18 suave."];
+   return ["PEDIR CARTA","Pedir contra carta forte do dealer."];
+  }
+  if(total===17&&up>=3&&up<=6)return ["DOBRAR","Dobrar se permitido; caso contrário, pedir."];
+  if((total===15||total===16)&&up>=4&&up<=6)return ["DOBRAR","Dobrar se permitido; caso contrário, pedir."];
+  if((total===13||total===14)&&up>=5&&up<=6)return ["DOBRAR","Dobrar se permitido; caso contrário, pedir."];
+  return ["PEDIR CARTA","Mão suave abaixo de 18: pedir, conforme a estratégia básica."];
+ }
+ if(total>=17)return ["PARAR","Total duro de 17 ou mais: parar."];
+ if(total>=13&&up<=6)return ["PARAR","Parar com 13 a 16 contra dealer de 2 a 6."];
+ if(total===12&&up>=4&&up<=6)return ["PARAR","Parar com 12 contra dealer de 4 a 6."];
+ if(total===11&&up<=10)return ["DOBRAR","Dobrar se permitido; caso contrário, pedir."];
+ if(total===10&&up<=9)return ["DOBRAR","Dobrar se permitido; caso contrário, pedir."];
+ if(total===9&&up>=3&&up<=6)return ["DOBRAR","Dobrar se permitido; caso contrário, pedir."];
+ return ["PEDIR CARTA","A estratégia básica recomenda pedir nesta situação."];
+}
+function analyze(){
+ const result=strategy();
+ document.getElementById("decision").textContent=result[0];
+ document.getElementById("explanation").textContent=result[1];
+}
+function saveRound(){
+ if(player.length<2||dealer.length<1){alert("Cadastre suas cartas e a carta do dealer.");return}
+ snapshot();
+ rounds++;
+ let p=handInfo(player.map(c=>c.rank)).total;
+ let d=dealerValue();
+ let result=p>21?"Derrota":p>d?"Vitória":p===d?"Empate":"Em andamento";
+ if(result==="Vitória")wins++;
+ if(result==="Derrota")losses++;
+ history.unshift(`Rodada ${rounds}: Jogador ${p} x Dealer ${d} — ${result}`);
+ document.getElementById("history").innerHTML=history.map(x=>`<div class="history-item">${x}</div>`).join("");
+ render();
+}
+function undo(){
+ const s=snapshots.pop();
+ if(!s){alert("Nada para desfazer.");return}
+ player=s.player;dealer=s.dealer;render();analyze();
+}
+function newRound(){
+ snapshot();player=[];dealer=[];render();
+ document.getElementById("decision").textContent="AGUARDANDO CARTAS";
+ document.getElementById("explanation").textContent="Cadastre as cartas para começar uma nova análise.";
+}
+function openAffiliate(){
+ const url=document.getElementById("affiliate").value.trim();
+ if(!url.startsWith("https://")&&!url.startsWith("http://")){
+  alert("Insira um link válido começando com https://");return;
+ }
+ window.open(url,"_blank","noopener");
+}
+buttons();render();
+</script>
+</body>
+</html>
